@@ -4,7 +4,7 @@ const { descriptors, places } = require('./seedHelpers');
 const Campground = require('../models/campground');
 const campground = require('../models/campground');
 
-mongoose.connect('mongodb://localhost:27017/farmStand', { useNewUrlParser: true, useUnifiedTopology: true})
+mongoose.connect('mongodb://localhost:27017/farmStand', { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
         console.log('MongoDBコネクションOK!!!!')
     })
@@ -24,9 +24,18 @@ const seedDB = async () => {
             author: '682af56dd18adb6458f472de',
             location: `${cities[randomCityIndex].prefecture}${cities[randomCityIndex].city}`,
             title: `${sample(descriptors)}・${sample(places)}`,
-            image: `https://picsum.photos/400?random=${Math.random()}`,
             description: '木曾路はすべて山の中である。あるところは岨づたいに行く崖の道であり、あるところは数十間の深さに臨む木曾川の岸であり、あるところは山の尾をめぐる谷の入り口である。一筋の街道はこの深い森林地帯を貫いていた。東ざかいの桜沢から、西の十曲峠まで、木曾十一宿はこの街道に添うて、二十二里余にわたる長い谿谷の間に散在していた。道路の位置も幾たびか改まったもので、古道はいつのまにか深い山間に埋もれた。',
-            price
+            price,
+            images: [
+                {
+                    url: 'https://res.cloudinary.com/dfhohjevy/image/upload/v1747798462/YelpCamp/b0ktqr2aqri6kppwvsmf.jpg',
+                    filename: 'YelpCamp/b0ktqr2aqri6kppwvsmf'
+                },
+                {
+                    url: 'https://res.cloudinary.com/dfhohjevy/image/upload/v1747798461/YelpCamp/skbgw5z8p5a2dh6bklg8.jpg',
+                    filename: 'YelpCamp/skbgw5z8p5a2dh6bklg8'
+                }
+            ]
         });
         await camp.save();
     }
