@@ -11,6 +11,9 @@ const flash = require('connect-flash');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user'); 
+const helmet = require('helmet');
+
+const mongoSanitize = require('express-mongo-sanitize');
 
 const ExpressError = require('./utils/ExpressError')
 const methodOverride = require('method-override');
@@ -19,6 +22,9 @@ const methodOverride = require('method-override');
 const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
+
+//導入しようとしたけれど格闘してもうまく働かないので保留
+// app.use(mongoSanitize());
 
 mongoose.connect('mongodb://localhost:27017/farmStand',
     {
@@ -47,11 +53,13 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // こんなところは覚えていなくていいからドキュメントを読んでできればいい
 const sessionConfig = {
+    name:'session',
     secret: 'mysecret',
     resave: false,
     savaUninitialized: true,
     cookie: {
         httpOnly: true,
+        // secure: true,
         maxAge: 1000 * 60 * 60 * 24 * 7
     }
 }
@@ -65,9 +73,45 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use(flash());
+app.use(helmet())
+
+const scriptSrcUrls = [
+    'https://api.mapbox.com',
+    'https://cdn.jsdelivr.net'
+];
+const styleSrcUrls = [
+    'https://api.mapbox.com',
+    'https://cdn.jsdelivr.net'
+];
+const connectSrcUrls = [
+    'https://api.mapbox.com',
+    'https://*.tiles.mapbox.com',
+    'https://events.mapbox.com'
+];
+const fontSrcUrls = [];
+const imgSrcUrls = [
+    `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/`,
+    'https://images.unsplash.com'
+];
+
+app.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: [],
+        connectSrc: ["'self'", ...connectSrcUrls],
+        scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+        styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+        workerSrc: ["'self'", "blob:"],
+        childSrc: ["blob:"],
+        objectSrc: [],
+        imgSrc: ["'self'", 'blob:', 'data:', ...imgSrcUrls],
+        fontSrc: ["'self'", ...fontSrcUrls]
+    }
+}));
+
+
 
 app.use((req,res,next) => {
-    console.log(req.session);
+    console.log(req.query);
     res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
@@ -77,7 +121,6 @@ app.use((req,res,next) => {
 app.get('/', (req, res) => {
     res.render('home')
 })
-
 
 app.use('/', userRoutes);
 app.use('/campgrounds', campgroundRoutes);
@@ -99,6 +142,8 @@ app.use((err, req, res, next) => {
     }
     res.status(statusCode).render('error', { err });
 })
+
+
 
 app.listen(3000, () => {
     console.log('ポート3000でリクエスト待受中')
