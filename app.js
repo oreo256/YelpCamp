@@ -10,7 +10,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
-const User = require('./models/user'); 
+const User = require('./models/user');
 const helmet = require('helmet');
 
 const mongoSanitize = require('express-mongo-sanitize');
@@ -23,10 +23,19 @@ const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 
+const MongoStore = require('connect-mongo');
+
 //導入しようとしたけれど格闘してもうまく働かないので保留
 // app.use(mongoSanitize());
+const dbUrl = "mongodb://localhost:27017/farmStand";
 
-mongoose.connect('mongodb://localhost:27017/farmStand',
+const dbUrl1 = process.env.DB_URL;
+const dbUrl2 = process.env.DB_URL_TEST;
+
+// mongodb://localhost:27017/farmStand
+// console.log(process.env.DB_URL)
+// console.log(process.env.DB_URL_TEST)
+mongoose.connect(dbUrl,
     {
         useNewUrlParser: true,
         useUnifiedTopology: true,
@@ -51,9 +60,23 @@ app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname, 'public')))
 
 
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto: {
+        secret: 'mysecret'
+    },
+    touchAfter: 24 * 3600
+});
+
+store.on('error',e => {
+    console.log('セッションストアエラー',e);
+})
+
+
 // こんなところは覚えていなくていいからドキュメントを読んでできればいい
 const sessionConfig = {
-    name:'session',
+    store,
+    name: 'session',
     secret: 'mysecret',
     resave: false,
     savaUninitialized: true,
@@ -110,7 +133,7 @@ app.use(helmet.contentSecurityPolicy({
 
 
 
-app.use((req,res,next) => {
+app.use((req, res, next) => {
     console.log(req.query);
     res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');
